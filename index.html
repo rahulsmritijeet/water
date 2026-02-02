@@ -776,19 +776,6 @@
         <div class="main-grid">
             <!-- Parameters Grid -->
             <div class="params-grid">
-                <!-- Turbidity -->
-                <div class="param-card glass" style="--accent-color: #00d4ff;">
-                    <div class="param-header">
-                        <div class="param-title">Turbidity Level</div>
-                        <div class="param-icon">🌊</div>
-                    </div>
-                    <div class="param-value"><span id="turbidityValue">15</span><span class="param-unit"> NTU</span></div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="turbidityBar" style="width: 15%; background: linear-gradient(90deg, #00ff88, #00d4ff);"></div>
-                    </div>
-                    <span class="param-status status-good" id="turbidityStatus">Excellent</span>
-                </div>
-
                 <!-- TDS -->
                 <div class="param-card glass" style="--accent-color: #00ff88;">
                     <div class="param-header">
@@ -883,16 +870,12 @@
                         <span class="detail-value status-good" id="ratingBadge">LOW</span>
                     </div>
                     <div class="detail-row">
-                        <span class="detail-label">Turbidity Contribution</span>
-                        <span class="detail-value" id="turbContrib">15%</span>
-                    </div>
-                    <div class="detail-row">
                         <span class="detail-label">TDS Contribution</span>
                         <span class="detail-value" id="tdsContrib">25%</span>
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">pH Deviation</span>
-                        <span class="detail-value" id="phContrib">3%</span>
+                        <span class="detail-value" id="phContrib">5%</span>
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">Stagnation Factor</span>
@@ -951,13 +934,6 @@
             </div>
             <form id="settingsForm">
                 <div class="form-group">
-                    <label>Turbidity Warning Threshold (NTU)</label>
-                    <div class="form-row">
-                        <input type="number" id="turbidityWarn" value="30" placeholder="Warning">
-                        <input type="number" id="turbidityCrit" value="50" placeholder="Critical">
-                    </div>
-                </div>
-                <div class="form-group">
                     <label>TDS Threshold (ppm)</label>
                     <div class="form-row">
                         <input type="number" id="tdsWarn" value="500" placeholder="Warning">
@@ -987,17 +963,15 @@
     </div>
 
     <script>
-        // Configuration & Thresholds
+        // Configuration & Thresholds (Turbidity removed)
         let thresholds = {
-            turbidity: { warn: 30, crit: 50 },
             tds: { warn: 500, crit: 1000 },
             ph: { min: 6.5, max: 8.5 },
             stagnation: { warn: 5, crit: 10 }
         };
 
-        // Current sensor values
+        // Current sensor values (Turbidity removed)
         let sensorData = {
-            turbidity: 15,
             tds: 250,
             ph: 7.2,
             stagnation: 2,
@@ -1028,27 +1002,23 @@
             }
         }
 
-        // Calculate dirtiness index
+        // Calculate dirtiness index (Updated weights without Turbidity)
         function calculateDirtinessIndex() {
-            // Turbidity contribution (0-40 points)
-            let turbScore = Math.min(40, (sensorData.turbidity / thresholds.turbidity.crit) * 40);
+            // TDS contribution (0-40 points)
+            let tdsScore = Math.min(40, (sensorData.tds / thresholds.tds.crit) * 40);
             
-            // TDS contribution (0-25 points)
-            let tdsScore = Math.min(25, (sensorData.tds / thresholds.tds.crit) * 25);
-            
-            // pH deviation (0-15 points)
+            // pH deviation (0-25 points)
             let phIdeal = 7.0;
             let phDeviation = Math.abs(sensorData.ph - phIdeal);
-            let phScore = Math.min(15, phDeviation * 5);
+            let phScore = Math.min(25, phDeviation * 8);
             
-            // Stagnation contribution (0-20 points)
-            let stagScore = Math.min(20, (sensorData.stagnation / thresholds.stagnation.crit) * 20);
+            // Stagnation contribution (0-35 points)
+            let stagScore = Math.min(35, (sensorData.stagnation / thresholds.stagnation.crit) * 35);
             
-            let total = Math.round(turbScore + tdsScore + phScore + stagScore);
+            let total = Math.round(tdsScore + phScore + stagScore);
             
             return {
                 total: Math.min(100, total),
-                turbidity: Math.round(turbScore),
                 tds: Math.round(tdsScore),
                 ph: Math.round(phScore),
                 stagnation: Math.round(stagScore)
@@ -1066,14 +1036,12 @@
         // Update all displays
         function updateDisplay() {
             // Update parameter values
-            document.getElementById('turbidityValue').textContent = sensorData.turbidity;
             document.getElementById('tdsValue').textContent = sensorData.tds;
             document.getElementById('phValue').textContent = sensorData.ph.toFixed(1);
             document.getElementById('stagnationValue').textContent = sensorData.stagnation;
             document.getElementById('tankLevel').textContent = sensorData.tankLevel + '%';
 
             // Update progress bars
-            updateProgressBar('turbidityBar', sensorData.turbidity, 100, thresholds.turbidity);
             updateProgressBar('tdsBar', sensorData.tds, 1500, thresholds.tds);
             updateProgressBar('stagnationBar', sensorData.stagnation, 15, thresholds.stagnation);
 
@@ -1082,8 +1050,6 @@
             document.getElementById('phBar').style.width = phPercent + '%';
 
             // Update parameter statuses
-            updateParamStatus('turbidityStatus', sensorData.turbidity, thresholds.turbidity, 
-                ['Excellent', 'Moderate', 'High']);
             updateParamStatus('tdsStatus', sensorData.tds, thresholds.tds,
                 ['Safe', 'Elevated', 'Critical']);
             updateParamStatus('stagnationStatus', sensorData.stagnation, thresholds.stagnation,
@@ -1107,7 +1073,6 @@
             const waterStatus = getWaterStatus(dirtiness.total);
 
             document.getElementById('dirtinessValue').textContent = dirtiness.total;
-            document.getElementById('turbContrib').textContent = dirtiness.turbidity + '%';
             document.getElementById('tdsContrib').textContent = dirtiness.tds + '%';
             document.getElementById('phContrib').textContent = dirtiness.ph + '%';
             document.getElementById('stagContrib').textContent = dirtiness.stagnation + '%';
@@ -1231,28 +1196,19 @@
                 });
             }
 
-            if (sensorData.turbidity >= thresholds.turbidity.crit) {
-                alerts.push({
-                    type: 'danger',
-                    icon: '⚠️',
-                    title: 'High Turbidity Detected',
-                    message: `Turbidity at ${sensorData.turbidity} NTU exceeds safe limits`
-                });
-            } else if (sensorData.turbidity >= thresholds.turbidity.warn) {
-                alerts.push({
-                    type: 'warning',
-                    icon: '⚡',
-                    title: 'Turbidity Warning',
-                    message: `Turbidity at ${sensorData.turbidity} NTU - monitor closely`
-                });
-            }
-
             if (sensorData.tds >= thresholds.tds.crit) {
                 alerts.push({
                     type: 'danger',
                     icon: '⚠️',
                     title: 'High TDS Level',
                     message: `TDS at ${sensorData.tds} ppm indicates significant contamination`
+                });
+            } else if (sensorData.tds >= thresholds.tds.warn) {
+                alerts.push({
+                    type: 'warning',
+                    icon: '⚡',
+                    title: 'TDS Warning',
+                    message: `TDS at ${sensorData.tds} ppm - monitor closely`
                 });
             }
 
@@ -1305,7 +1261,6 @@
         // Simulation functions
         function simulateClean() {
             sensorData = {
-                turbidity: Math.floor(Math.random() * 15) + 5,
                 tds: Math.floor(Math.random() * 200) + 100,
                 ph: (Math.random() * 0.8 + 6.8).toFixed(1) * 1,
                 stagnation: Math.floor(Math.random() * 2),
@@ -1316,7 +1271,6 @@
 
         function simulateDirty() {
             sensorData = {
-                turbidity: Math.floor(Math.random() * 30) + 35,
                 tds: Math.floor(Math.random() * 400) + 400,
                 ph: (Math.random() * 1.5 + 5.5).toFixed(1) * 1,
                 stagnation: Math.floor(Math.random() * 4) + 5,
@@ -1327,7 +1281,6 @@
 
         function simulateCritical() {
             sensorData = {
-                turbidity: Math.floor(Math.random() * 40) + 60,
                 tds: Math.floor(Math.random() * 500) + 800,
                 ph: (Math.random() * 2 + 4.5).toFixed(1) * 1,
                 stagnation: Math.floor(Math.random() * 5) + 10,
@@ -1338,12 +1291,10 @@
 
         function refreshData() {
             // Simulate random fluctuations
-            sensorData.turbidity = Math.max(0, sensorData.turbidity + (Math.random() * 10 - 5));
             sensorData.tds = Math.max(0, sensorData.tds + (Math.random() * 50 - 25));
             sensorData.ph = Math.max(0, Math.min(14, sensorData.ph + (Math.random() * 0.4 - 0.2)));
             
             // Round values
-            sensorData.turbidity = Math.round(sensorData.turbidity);
             sensorData.tds = Math.round(sensorData.tds);
             sensorData.ph = Math.round(sensorData.ph * 10) / 10;
             
@@ -1372,8 +1323,6 @@
 
         // Settings modal
         function openSettings() {
-            document.getElementById('turbidityWarn').value = thresholds.turbidity.warn;
-            document.getElementById('turbidityCrit').value = thresholds.turbidity.crit;
             document.getElementById('tdsWarn').value = thresholds.tds.warn;
             document.getElementById('tdsCrit').value = thresholds.tds.crit;
             document.getElementById('phMin').value = thresholds.ph.min;
@@ -1389,8 +1338,6 @@
 
         document.getElementById('settingsForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            thresholds.turbidity.warn = parseFloat(document.getElementById('turbidityWarn').value);
-            thresholds.turbidity.crit = parseFloat(document.getElementById('turbidityCrit').value);
             thresholds.tds.warn = parseFloat(document.getElementById('tdsWarn').value);
             thresholds.tds.crit = parseFloat(document.getElementById('tdsCrit').value);
             thresholds.ph.min = parseFloat(document.getElementById('phMin').value);
